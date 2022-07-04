@@ -11,7 +11,7 @@ Q1. Run the web crawler using the configurations located at src/main/config/writ
 
     Why did the parser take more time when run with ParallelWebCrawler?
 
-    1_b config is using parallelWebCrawler without any parallelism, with that we are not taking advantage of any parallel processing power "and wasting the resources"/
+    ParallelWebCrawler profiler sums up time taken by parse method all threads.
 
 
 Q2. Your manager ran your crawler on her old personal computer, using the configurations from Q1, and she notices that
@@ -20,15 +20,11 @@ Q2. Your manager ran your crawler on her old personal computer, using the config
     (a) Suggest one reason why the sequential web crawler was able to read more web pages than the parallel crawler.
         (Hint: Try setting "parallelism" to 1 in the JSON configs to simulate your manager's computer.)
 
-        Run at Mon, 4 Jul 2022 00:36:26 GMT
-        com.udacity.webcrawler.SequentialWebCrawler#crawl took 0m 2s 394ms
-        com.udacity.webcrawler.parser.PageParserImpl#parse took 0m 2s 384ms
+    Parallel web crawler implementation is based on fork-join pool "which gives optimized performance on multiprocessor cpu"
 
-        Run at Mon, 4 Jul 2022 00:37:13 GMT
-        com.udacity.webcrawler.ParallelWebCrawler#crawl took 0m 2s 389ms
-        com.udacity.webcrawler.parser.PageParserImpl#parse took 0m 2s 375ms
+    on a single threaded "old personal computer"  parallel web crawler requires extra resources for threads resulting slower performance.
+    While sequential web crawler needed only single thread and will outperform parallelwebcrawler on old system.
 
-        without defining parallelisim "system will not limit the resource consumption", hence sequential job will perform better as using limited memory space.
 
     (b) Suggest one scenario in which the parallel web crawler will almost certainly perform better than the sequential
         crawler. Why will it perform better?

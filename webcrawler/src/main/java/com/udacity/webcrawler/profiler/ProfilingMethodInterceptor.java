@@ -26,9 +26,9 @@ final class ProfilingMethodInterceptor implements InvocationHandler {
   // TODO: You will need to add more instance fields and constructor arguments to this class.
 	  ProfilingMethodInterceptor(Clock clock, Object delegate, ProfilingState state, ZonedDateTime startTime) {
 		    this.clock = Objects.requireNonNull(clock);
-		    this.delegate = delegate;
-		    this.state = state;
-		    this.startTime = startTime;
+		    this.delegate = Objects.requireNonNull(delegate);
+		    this.state = Objects.requireNonNull(state);
+		    this.startTime = Objects.requireNonNull(startTime);
 		  }
 
   @Override
@@ -57,4 +57,13 @@ final class ProfilingMethodInterceptor implements InvocationHandler {
 
 	    return invoked;
   }
+	@Override
+	public boolean equals(Object object){
+
+		if(object == this) return true;
+		if(!(object instanceof ProfilingMethodInterceptor)) return false;
+		ProfilingMethodInterceptor methodInterceptor = (ProfilingMethodInterceptor) object;
+		return Objects.equals(this.clock, methodInterceptor.clock) && Objects.equals(delegate,methodInterceptor.delegate) && Objects.equals(this.state,methodInterceptor.state) && Objects.equals(startTime,methodInterceptor.startTime);
+
+	}
 }

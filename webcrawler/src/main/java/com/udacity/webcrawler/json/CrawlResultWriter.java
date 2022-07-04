@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -52,7 +53,7 @@ public final class CrawlResultWriter {
     // TODO: Fill in this method.
     ObjectMapper mapper = new ObjectMapper();
     mapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
-
+    mapper.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
     try {
       mapper.writeValue(writer, result);
     } catch (Exception ex) {
