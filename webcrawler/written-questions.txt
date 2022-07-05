@@ -35,12 +35,12 @@ Q3. Analyze your method profiler through the lens of Aspect Oriented Programming
 
     (a) What cross-cutting concern is being addressed by the com.udacity.webcrawler.profiler.Profiler class?
 
-        Profiler class is implemented to record the performance of webCrawler application (in both sequential and parallel processing modes).
+        The performance measure of the Profiler class is a property of a cross-cutting concern.
 
 
     (b) What are the join points of the Profiler in the web crawler program?
 
-    ProfileId is the Foreign key relation / join point between profiler and webcrawler app.
+    methods with @ProfileId annotation are addressed and join point for profiler in webcrawler app.
 
 
 Q4. Identify three (3) different design patterns used in this project, and explain which interfaces, classes, and/or
