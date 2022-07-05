@@ -1,24 +1,19 @@
 package com.udacity.webcrawler;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveTask;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
-
-import javax.inject.Inject;
-
 import com.udacity.webcrawler.json.CrawlResult;
 import com.udacity.webcrawler.parser.PageParser;
 import com.udacity.webcrawler.parser.PageParserFactory;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * A concrete implementation of {@link WebCrawler} that runs multiple threads on a
@@ -32,8 +27,7 @@ final class ParallelWebCrawler implements WebCrawler {
     private final List<Pattern> ignoredUrls;
     private final int maxDepth;
     private final PageParserFactory parserFactory;
-
-    public static Lock lock = new ReentrantLock();
+    public ReentrantLock lock = new ReentrantLock();
 
     @Inject
     ParallelWebCrawler(
@@ -59,7 +53,7 @@ final class ParallelWebCrawler implements WebCrawler {
         ConcurrentMap<String, Integer> counts = new ConcurrentHashMap<>();
         ConcurrentSkipListSet<String> visitedUrls = new ConcurrentSkipListSet<>();
         for (String url : startingUrls) {
-            pool.invoke(new InternalCrawler(url, deadline, maxDepth, counts, visitedUrls, clock, parserFactory, ignoredUrls));
+            pool.invoke(new InternalCrawler(url, deadline, maxDepth, counts, visitedUrls));
         }
 
         if (counts.isEmpty()) {
@@ -82,20 +76,12 @@ final class ParallelWebCrawler implements WebCrawler {
         private ConcurrentMap<String, Integer> counts;
         private ConcurrentSkipListSet<String> visitedUrls;
 
-        private Clock clock;
-        private PageParserFactory parserFactory;
-        private List<Pattern> ignoredUrls;
-
-        public InternalCrawler(String url, Instant deadline, int maxDepth, ConcurrentMap<String, Integer> counts, ConcurrentSkipListSet<String> visitedUrls, Clock clock,
-                               PageParserFactory parserFactory, List<Pattern> ignoredUrls) {
+        public InternalCrawler(String url, Instant deadline, int maxDepth, ConcurrentMap<String, Integer> counts, ConcurrentSkipListSet<String> visitedUrls) {
             this.url = url;
             this.deadline = deadline;
             this.maxDepth = maxDepth;
             this.counts = counts;
             this.visitedUrls = visitedUrls;
-            this.clock = clock;
-            this.parserFactory = parserFactory;
-            this.ignoredUrls = ignoredUrls;
         }
 
         @Override
@@ -108,30 +94,28 @@ final class ParallelWebCrawler implements WebCrawler {
                     return false;
                 }
             }
-//            if (visitedUrls.contains(url)) {
-//                return false;
-//            }
-//            visitedUrls.add(url);
+            if (!visitedUrls.add(url)) {
+                return false;
+            }
             try {
                 lock.lock();
                 if (visitedUrls.contains(url)) {
-                    return false;
-
+                    // return empty result
+                } else {
+                    visitedUrls.add(url);
                 }
-                visitedUrls.add(url);
-            } catch (Exception exception) {
-                exception.printStackTrace();
+                // process URL and return
             } finally {
                 lock.unlock();
             }
             PageParser.Result result = parserFactory.get(url).parse();
 
             for (ConcurrentMap.Entry<String, Integer> e : result.getWordCounts().entrySet()) {
-                counts.compute(e.getKey(), (key, value) -> (value == null) ? e.getValue() : e.getValue() + value);
+                counts.compute(e.getKey(), (k, v) -> (v == null) ? e.getValue() : e.getValue() + v);
             }
             List<InternalCrawler> subtasks = new ArrayList<>();
             for (String link : result.getLinks()) {
-                subtasks.add(new InternalCrawler(link, deadline, maxDepth - 1, counts, visitedUrls, clock, parserFactory, ignoredUrls));
+                subtasks.add(new InternalCrawler(link, deadline, maxDepth - 1, counts, visitedUrls));
             }
             invokeAll(subtasks);
             return true;
